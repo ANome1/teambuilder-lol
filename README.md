@@ -24,11 +24,3 @@ npm install
 npm run dev
 ```
 
-### 3. Mise en ligne (Vercel)
-
-1. Pousse le repo sur GitHub.
-2. Sur [vercel.com](https://vercel.com), clique sur **Add New > Project** et importe le repo (Vercel détecte Vite tout seul).
-3. Ajoute les variables `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY` dans **Environment Variables**.
-4. Déploie et envoie l'URL à l'équipe.
-
-> Il n'y a pas de comptes : toute personne qui a le lien peut modifier les données. Ne partage le lien qu'avec l'équipe.
