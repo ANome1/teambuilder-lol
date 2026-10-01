@@ -1,0 +1,47 @@
+@import 'tailwindcss';
+
+/* Palette inspirée du client LoL */
+@theme {
+  --color-bg: #0a0e17;
+  --color-surface: #121a28;
+  --color-surface-2: #1a2436;
+  --color-line: #2a3650;
+  --color-muted: #8b93a7;
+  --color-gold: #c8aa6e;
+  --color-gold-light: #f0e6d2;
+  --color-hextech: #0ac8b9;
+  --color-danger: #e0565b;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+  body {
+    @apply min-h-screen bg-bg text-[#e8e6e1];
+  }
+  button:not(:disabled) {
+    @apply cursor-pointer;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply rounded border border-gold bg-gradient-to-b from-[#1e2a3e] to-surface px-3.5 py-2 text-gold-light hover:border-gold-light disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-ghost {
+    @apply rounded border border-transparent px-2 py-1 text-muted hover:border-line hover:text-gold-light;
+  }
+  .field {
+    @apply w-full rounded border border-line bg-bg px-2.5 py-2 focus:border-hextech focus:outline-none;
+  }
+  .label {
+    @apply block text-sm text-muted;
+  }
+  .card {
+    @apply rounded-md border border-line bg-surface p-4;
+  }
+  .role-label {
+    @apply text-xs tracking-wider uppercase;
+  }
+}
