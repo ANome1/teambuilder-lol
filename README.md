@@ -24,6 +24,7 @@ npm install
 npm run dev
 ```
 
+<<<<<<< HEAD
 ## Analyse de draft
 
 L'analyse s'appuie sur une fiche par champion écrite à la main dans [src/lib/profiles.js](src/lib/profiles.js) : type de dégâts, moment fort et traits (frontline, engage, plongée, réception…). Corrige une fiche si tu n'es pas d'accord. Les styles de jeu sont dans [src/lib/draft.js](src/lib/draft.js), les compos de référence pro dans [src/lib/proDrafts.js](src/lib/proDrafts.js).
@@ -43,3 +44,5 @@ npm run meta -- --no-pro  # soloQ seulement, quelques secondes
 ```
 
 OP.GG et Leaguepedia ne sont pas des API officielles : si l'une ne répond plus, ses données précédentes sont gardées.
+=======
+>>>>>>> 1d1a3bd (Remove Vercel deployment instructions)
