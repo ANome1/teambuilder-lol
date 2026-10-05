@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { ROLES } from '../lib/roles'
 import { ChampionIcon, ChampionSearch, useChamps } from './Champion'
+import DraftAnalysis from './DraftAnalysis'
 import Modal from './Modal'
 
 export default function Comps({ comps, players, reload }) {
@@ -57,7 +58,10 @@ export default function Comps({ comps, players, reload }) {
                 )
               })}
             </div>
-            {c.notes && <p className="mt-3 border-t border-line pt-3 whitespace-pre-wrap text-muted">{c.notes}</p>}
+            <div className="mt-3 border-t border-line pt-3">
+              <DraftAnalysis picks={c.picks} compact />
+            </div>
+            {c.notes &&<p className="mt-3 border-t border-line pt-3 whitespace-pre-wrap text-muted">{c.notes}</p>}
           </article>
         ))}
       </div>
@@ -149,6 +153,11 @@ function CompEditor({ comp, players, onClose, onSaved }) {
             </div>
           )
         })}
+
+        <div className="grid gap-3 rounded border border-line p-3">
+          <h4 className="font-semibold text-gold-light">Analyse de la draft</h4>
+          <DraftAnalysis picks={picks} />
+        </div>
 
         <label className="label">
           Notes (win condition, bans, plan de jeu…)

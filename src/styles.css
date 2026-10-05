@@ -11,6 +11,10 @@
   --color-gold-light: #f0e6d2;
   --color-hextech: #0ac8b9;
   --color-danger: #e0565b;
+  --color-ok: #4cc38a;
+  --color-warn: #e8b04a;
+  --color-physical: #e07b4f;
+  --color-magic: #6f8dff;
 }
 
 @layer base {
