@@ -20,23 +20,41 @@ const names = (list) => {
   return parts.length > 1 ? `${parts.slice(0, -1).join(', ')} et ${parts.at(-1)}` : parts[0]
 }
 
+// Libellés des métriques utilisées par les archétypes (traits + métriques dérivées).
+const METRIC_LABELS = {
+  ...Object.fromEntries(TRAITS.map((t) => [t.key, t.label])),
+  splitters: 'Split pusher en side lane',
+  lateCarries: 'Carry late game',
+}
+
+// Chaque archétype décrit la compo idéale par des objectifs : { métrique: valeur visée }.
+// - core : ce qui définit le style. Sans lui, l'archétype ne tient pas.
+// - support : ce qui le rend efficace (bonus jusqu'à +30 %).
+// Score = adéquation core × (0.7 + 0.3 × adéquation support), toujours entre 0 et 1,
+// donc comparable d'un archétype à l'autre quel que soit le nombre de traits regardés.
 const ARCHETYPES = [
   {
     key: 'engage',
     label: 'Engage / Teamfight',
-    score: (t) => t.E * 2 + t.C + t.D + t.F * 0.5,
+    core: { E: 2 },
+    support: { C: 2, F: 2, D: 2 },
     plan: ({ engagers }) => ({
       win: `Forcer des teamfights à 5 autour des objectifs, lancés par ${engagers.length ? names(engagers) : 'votre meilleur engage'}.`,
       mid: [
         'Groupez-vous autour des drakes et du Nashor : posez la vision dans la rivière 1 minute avant le spawn.',
         "Cherchez l'engage quand l'adversaire rentre dans le pit ou passe dans un couloir étroit.",
       ],
+      late: [
+        "Jouez autour du Nashor et de l'Elder : forcez le fight dès que l'adversaire doit les contester.",
+        "Visez le carry adverse avec l'engage : s'il est mal placé, le fight est gagné avant d'avoir commencé.",
+      ],
     }),
   },
   {
     key: 'poke',
     label: 'Poke / Siège',
-    score: (t) => t.K * 2 + t.P,
+    core: { K: 3 },
+    support: { P: 1, C: 1 },
     plan: ({ pokers }) => ({
       win: `Affaiblir l'adversaire à distance avec ${pokers.length ? names(pokers) : 'votre poke'} avant chaque objectif, puis le prendre sans vrai fight.`,
       mid: [
@@ -52,15 +70,16 @@ const ARCHETYPES = [
   {
     key: 'pick',
     label: 'Pick / Catch',
-    score: (t) => t.A * 2 + t.C,
+    core: { A: 2 },
+    support: { C: 2, E: 1 },
     plan: ({ pickers }) => ({
       win: `Attraper un adversaire isolé avec ${pickers.length ? names(pickers) : 'vos CC'} pour jouer ensuite à 5 contre 4.`,
       mid: [
         'Posez de la vision deep dans la jungle adverse et chassez ceux qui partent poser des wards ou farmer seuls.',
-        'Jouez dans le fog',
+        'Jouez dans le fog.',
       ],
       late: [
-        "Avant chaque objectif, cherchez un pick. pas un 5v5 de face.",
+        'Avant chaque objectif, cherchez un pick, pas un 5v5 de face.',
         'Après un pick, prenez immédiatement un objectif.',
       ],
     }),
@@ -68,7 +87,10 @@ const ARCHETYPES = [
   {
     key: 'split',
     label: 'Split push',
-    score: (t) => t.S * 2 + t.A * 0.5,
+    // Un seul split pusher ne suffit pas à faire une compo split (1-3-1 ou 1-4 avec un 2e side laner).
+    // Les 4 autres doivent pouvoir tenir sans fight : disengage et waveclear/poke.
+    core: { splitters: 2 },
+    support: { P: 1, K: 1 },
     plan: ({ splitters }) => ({
       win: `Mettre la pression en side lane avec ${splitters.length ? names(splitters) : 'votre meilleur duelliste'} pour forcer l'adversaire à se diviser.`,
       mid: [
@@ -76,7 +98,7 @@ const ARCHETYPES = [
         "Le split pusher garde sa TP pour rejoindre un fight ou un objectif.",
       ],
       late: [
-        "Les 4 autres ne forcent pas de fight",
+        'Les 4 autres ne forcent pas de fight.',
         "Dès que 2 adversaires partent sur le side, prenez un objectif à 4 contre 3.",
       ],
     }),
@@ -84,7 +106,8 @@ const ARCHETYPES = [
   {
     key: 'protect',
     label: 'Protect the carry',
-    score: (t, { carries, peelers }) => peelers.length * 2 + carries.filter((c) => c.profile.scaling === 'l').length * 2,
+    core: { lateCarries: 1, P: 2 },
+    support: { F: 1, C: 1 },
     plan: ({ carries, peelers }) => ({
       win: `Garder ${carries.length ? names(carries) : 'votre carry'} en vie : il fait les dégâts, ${peelers.length ? names(peelers) : 'les autres'} le protègent.`,
       mid: [
@@ -92,12 +115,14 @@ const ARCHETYPES = [
         'Évitez les fights où le carry ne peut pas être présent.',
       ],
       late: [
-        'En fight: restez près du carry et gardez vos CC pour ceux qui plongent sur lui.',
+        'En fight : restez près du carry et gardez vos CC pour ceux qui plongent sur lui.',
         'Le carry se place toujours derrière sa frontline et ne face-check jamais un buisson.',
       ],
     }),
   },
 ]
+
+export const ARCHETYPE_LABELS = Object.fromEntries(ARCHETYPES.map((a) => [a.key, a.label]))
 
 const TEMPO = {
   early: {
@@ -121,6 +146,33 @@ const TEMPO = {
       'À 3 items, c\'est vous qui êtes plus forts : à partir de là, forcez les fights.',
     ],
   },
+}
+
+const MIN_FIT = 0.35
+
+// À score égal, le style le plus spécifique l'emporte : presque toute compo a un peu d'engage.
+const SPECIFICITY = ['protect', 'split', 'poke', 'pick', 'engage']
+
+// Adéquation (0 à 1) d'une compo à des objectifs : moyenne des min(valeur / objectif, 1).
+const fit = (metrics, goals) => {
+  const entries = Object.entries(goals)
+  return entries.reduce((sum, [k, target]) => sum + Math.min(metrics[k] / target, 1), 0) / entries.length
+}
+
+// Ce qui manque pour remplir les objectifs, du core au support.
+const gapsOf = (metrics, goals, core) =>
+  Object.entries(goals)
+    .filter(([k, target]) => metrics[k] < target)
+    .map(([k, target]) => ({ key: k, label: METRIC_LABELS[k], have: metrics[k], need: target, core }))
+
+function scoreArchetype(archetype, metrics) {
+  const core = fit(metrics, archetype.core)
+  const support = fit(metrics, archetype.support)
+  return {
+    ...archetype,
+    value: core * (0.7 + 0.3 * support),
+    gaps: [...gapsOf(metrics, archetype.core, true), ...gapsOf(metrics, archetype.support, false)],
+  }
 }
 
 export function analyzeComp(picks, byId) {
@@ -150,7 +202,14 @@ export function analyzeComp(picks, byId) {
     carries: withTrait('D').filter((c) => c.role !== 'support'),
   }
 
-  const ranked = ARCHETYPES.map((a) => ({ ...a, value: a.score(traits, groups) })).sort((a, b) => b.value - a.value)
+  const metrics = {
+    ...traits,
+    splitters: groups.splitters.length,
+    lateCarries: groups.carries.filter((c) => c.profile.scaling === 'l').length,
+  }
+  const ranked = ARCHETYPES.map((a) => scoreArchetype(a, metrics)).sort(
+    (a, b) => b.value - a.value || SPECIFICITY.indexOf(a.key) - SPECIFICITY.indexOf(b.key),
+  )
   const [main, secondary] = ranked
 
   const warnings = []
@@ -182,16 +241,18 @@ export function analyzeComp(picks, byId) {
     if (tempo === 'early') strengths.push('Forte en early : vous pouvez prendre le contrôle de la carte dès les premières minutes.')
   }
 
-  const plan = main.plan(groups)
+  // Aucun archétype ne colle (ex : 1-2 champions sans trait marquant) : pas de plan plutôt qu'un plan arbitraire.
+  const archetype = main.value >= MIN_FIT ? main : null
 
   return {
     champs,
     traits,
     physicalShare,
     tempo: { key: tempo, ...TEMPO[tempo] },
-    archetype: main,
-    secondary: secondary.value > 0 && secondary.value >= main.value * 0.7 ? secondary : null,
-    plan,
+    archetypes: ranked,
+    archetype,
+    secondary: archetype && secondary.value >= MIN_FIT && secondary.value >= main.value * 0.75 ? secondary : null,
+    plan: archetype?.plan(groups) ?? null,
     warnings,
     strengths,
     estimated: champs.filter((c) => c.profile.estimated),

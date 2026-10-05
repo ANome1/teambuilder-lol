@@ -1,10 +1,14 @@
 import { useMemo } from 'react'
 import { analyzeComp, TRAITS } from '../lib/draft'
+import { matchProDrafts } from '../lib/proDrafts'
 import { useChamps } from './Champion'
+import ProDrafts from './ProDrafts'
 
-export default function DraftAnalysis({ picks, compact = false }) {
+// `pools` et `onPick` (optionnels) activent les suggestions cliquables des références pro.
+export default function DraftAnalysis({ picks, compact = false, pools, onPick }) {
   const { byId } = useChamps()
   const a = useMemo(() => analyzeComp(picks, byId), [picks, byId])
+  const refs = useMemo(() => matchProDrafts(a), [a])
 
   if (a.champs.length === 0) return <p className="text-sm text-muted">Choisis des champions pour voir l'analyse.</p>
 
@@ -12,11 +16,17 @@ export default function DraftAnalysis({ picks, compact = false }) {
     <div className="grid gap-4">
       <div className="flex flex-wrap items-center gap-2">
         <span className="rounded border border-gold bg-surface-2 px-2.5 py-1 text-sm font-semibold text-gold-light">
-          {a.archetype.label}
+          {a.archetype ? `${a.archetype.label} · ${pct(a.archetype.value)}` : 'Style pas encore défini'}
         </span>
         {a.secondary && <span className="text-sm text-muted">tendance {a.secondary.label}</span>}
         <span className="ml-auto rounded border border-line px-2.5 py-1 text-xs text-muted">Pic : {a.tempo.label}</span>
       </div>
+
+      {compact && refs[0] && (
+        <p className="text-xs text-muted">
+          Proche de la référence pro <span className="text-gold-light">{refs[0].name}</span> ({pct(refs[0].similarity)})
+        </p>
+      )}
 
       <DamageBar physicalShare={a.physicalShare} />
 
@@ -30,6 +40,8 @@ export default function DraftAnalysis({ picks, compact = false }) {
           ))}
         </div>
       )}
+
+      {!compact && <ArchetypeScores archetypes={a.archetypes} main={a.archetype} />}
 
       {(a.strengths.length > 0 || a.warnings.length > 0) && (
         <ul className="grid gap-1.5 text-sm">
@@ -45,19 +57,53 @@ export default function DraftAnalysis({ picks, compact = false }) {
       {!compact && (
         <div className="grid gap-3 rounded bg-surface-2 p-4 text-sm">
           <h4 className="font-semibold text-gold-light">Plan de jeu</h4>
-          <p>
-            <span className="role-label mr-2 text-gold">Win condition</span>
-            {a.plan.win}
-          </p>
+          {a.plan ? (
+            <p>
+              <span className="role-label mr-2 text-gold">Win condition</span>
+              {a.plan.win}
+            </p>
+          ) : (
+            <p className="text-muted">Ajoutez des champions pour dégager une win condition.</p>
+          )}
           <Phase title="Early" items={a.tempo.text} />
-          <Phase title="Mid game" items={a.plan.mid} />
-          <Phase title="Late game" items={a.plan.late} />
+          <Phase title="Mid game" items={a.plan?.mid} />
+          <Phase title="Late game" items={a.plan?.late} />
         </div>
       )}
+
+      {!compact && <ProDrafts refs={refs} analysis={a} pools={pools} onPick={onPick} />}
 
       {!compact && a.estimated.length > 0 && (
         <p className="text-xs text-muted">
           Profil estimé automatiquement pour : {a.estimated.map((c) => c.name).join(', ')} (à compléter dans src/lib/profiles.js).
+        </p>
+      )}
+    </div>
+  )
+}
+
+const pct = (v) => `${Math.round(v * 100)} %`
+
+// Adéquation de la compo à chaque archétype + ce qui manque à l'archétype principal.
+function ArchetypeScores({ archetypes, main }) {
+  const gaps = main?.gaps ?? []
+  return (
+    <div className="grid gap-2">
+      <div className="grid gap-1">
+        {archetypes.map((arch) => (
+          <div key={arch.key} className="grid grid-cols-[9rem_1fr_3rem] items-center gap-2 text-xs">
+            <span className={arch.key === main?.key ? 'text-gold-light' : 'text-muted'}>{arch.label}</span>
+            <div className="h-1.5 overflow-hidden rounded-full bg-line">
+              <div className={arch.key === main?.key ? 'h-full bg-gold' : 'h-full bg-muted'} style={{ width: pct(arch.value) }} />
+            </div>
+            <span className="text-right text-muted">{pct(arch.value)}</span>
+          </div>
+        ))}
+      </div>
+      {gaps.length > 0 && (
+        <p className="text-xs text-muted">
+          Pour renforcer le style {main.label} :{' '}
+          {gaps.map((g) => `${g.label} ${g.have}/${g.need}${g.core ? ' (essentiel)' : ''}`).join(', ')}.
         </p>
       )}
     </div>

@@ -152,7 +152,7 @@ export const PROFILES = {
   Tristana: 'P l D',
   Trundle: 'P m FS',
   Tryndamere: 'P l S',
-  TwistedFate: 'M m A',
+  TwistedFate: 'M m AS',
   Twitch: 'P l D',
   Udyr: 'X m FS',
   Urgot: 'P m FS',

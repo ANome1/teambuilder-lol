@@ -156,7 +156,13 @@ function CompEditor({ comp, players, onClose, onSaved }) {
 
         <div className="grid gap-3 rounded border border-line p-3">
           <h4 className="font-semibold text-gold-light">Analyse de la draft</h4>
-          <DraftAnalysis picks={picks} />
+          <DraftAnalysis
+            picks={picks}
+            pools={Object.fromEntries(
+              ROLES.map((r) => [r.key, players.find((p) => p.id === picks[r.key]?.player_id)?.champions[r.key] ?? []]),
+            )}
+            onPick={(role, id) => setPick(role, { champion: id })}
+          />
         </div>
 
         <label className="label">
