@@ -1,6 +1,6 @@
 # teambuilder-lol
 
-Petit outil pour préparer les compos de notre équipe pour le tournoi LoL.
+Petit outil pour préparer les compos de notre équipe pour un tournoi LoL.
 
 - **Joueurs** : chacun renseigne ses rôles (par ordre de préférence) et son pool de champions par rôle.
 - **Compos** : on assemble des compos (joueur + champion par rôle) avec des notes (win condition, bans…).
