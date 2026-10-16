@@ -1,7 +1,8 @@
-import { useState } from 'react'
-import { adaptToProDraft } from '../lib/proDrafts'
-import { roleLabel } from '../lib/roles'
+import { useMemo, useState } from 'react'
 import { ARCHETYPE_LABELS } from '../lib/draft'
+import { PRO, strongPicks } from '../lib/meta'
+import { adaptToProDraft, classifyProDrafts, proExamples } from '../lib/proDrafts'
+import { ROLES, roleLabel } from '../lib/roles'
 import { ChampionIcon, useChamps } from './Champion'
 
 const STATUS = {
@@ -12,24 +13,31 @@ const STATUS = {
 }
 
 const pct = (v) => `${Math.round(v * 100)} %`
+const date = (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
 
-// Références pro les plus proches de la compo, et comment s'en rapprocher rôle par rôle.
+// Références pro les plus proches de la compo, comment s'en rapprocher rôle par rôle,
+// et des drafts pro récentes qui jouent le même style.
 export default function ProDrafts({ refs, analysis, pools, onPick }) {
   const { byId } = useChamps()
   const [selectedKey, setSelectedKey] = useState(null)
+  const [showAll, setShowAll] = useState(false)
+  // Les drafts pro des derniers patchs, analysées une fois pour toutes.
+  const classified = useMemo(() => classifyProDrafts(PRO?.drafts ?? [], byId), [byId])
   if (!refs.length) return null
 
-  const shown = refs.slice(0, 3)
-  const ref = shown.find((r) => r.key === selectedKey) ?? shown[0]
+  const shown = showAll ? refs : refs.slice(0, 3)
+  const ref = refs.find((r) => r.key === selectedKey) ?? shown[0]
   const taken = analysis.champs.map((c) => c.id)
-  const rows = adaptToProDraft(ref, analysis, pools, taken)
+  const meta = Object.fromEntries(ROLES.map((r) => [r.key, strongPicks(r.key)]))
+  const rows = adaptToProDraft(ref, analysis, { pools, taken, meta, byId })
+  const examples = proExamples(ref, classified)
 
   return (
     <div className="grid gap-3 rounded border border-line p-4 text-sm">
       <h4 className="font-semibold text-gold-light">Références de la scène pro</h4>
 
       <div className="flex flex-wrap gap-2">
-        {shown.map((r) => (
+        {[...shown, ...(shown.includes(ref) ? [] : [ref])].map((r) => (
           <button
             key={r.key}
             type="button"
@@ -41,6 +49,9 @@ export default function ProDrafts({ refs, analysis, pools, onPick }) {
             {r.name} · {pct(r.similarity)}
           </button>
         ))}
+        <button type="button" className="btn-ghost text-xs" onClick={() => setShowAll((v) => !v)}>
+          {showAll ? 'Moins de références' : `Toutes les références (${refs.length})`}
+        </button>
       </div>
 
       <p className="text-muted">
@@ -78,10 +89,11 @@ export default function ProDrafts({ refs, analysis, pools, onPick }) {
                     <ChampionIcon
                       id={s.id}
                       size={28}
-                      title={`${byId[s.id]?.name ?? s.id}${s.inPool ? ' — dans le pool du joueur' : ''}`}
+                      title={`${byId[s.id]?.name ?? s.id}${s.inPool ? ' — dans le pool du joueur' : ''}${s.inMeta ? ' — fort en ce moment' : ''}`}
                       onClick={onPick ? () => onPick(row.role, s.id) : undefined}
                     />
                     {s.inPool && <span className="text-hextech">pool</span>}
+                    {s.inMeta && <span className="text-ok">méta</span>}
                   </span>
                 ))}
               </div>
@@ -95,6 +107,31 @@ export default function ProDrafts({ refs, analysis, pools, onPick }) {
           <li key={n}>{n}</li>
         ))}
       </ul>
+
+      {examples.length > 0 && (
+        <div className="grid gap-2 border-t border-line pt-3">
+          <span className="role-label text-gold">Joué en pro récemment</span>
+          {examples.map((d) => (
+            <div key={`${d.date}-${d.team}-${d.opponent}-${d.picks.join()}`} className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span className="flex gap-1">
+                {d.picks.map((id, i) => (
+                  <ChampionIcon
+                    key={id}
+                    id={id}
+                    size={28}
+                    title={`${byId[id]?.name ?? id} (${roleLabel(ROLES[i].key)})`}
+                    onClick={onPick ? () => onPick(ROLES[i].key, id) : undefined}
+                  />
+                ))}
+              </span>
+              <span className="text-xs text-muted">
+                <span className={d.win ? 'text-ok' : 'text-warn'}>{d.win ? 'Victoire' : 'Défaite'}</span> de {d.team} contre{' '}
+                {d.opponent} · {d.tournament} · patch {d.patch} · {date(d.date)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { isConfigured, useTable } from './lib/supabase'
-import { useChampions } from './lib/champions'
+import { patchOf, useChampions } from './lib/champions'
+import { SOLOQ } from './lib/meta'
 import { ChampionsContext } from './components/Champion'
+import { MetaSources } from './components/MetaCheck'
 import Players from './components/Players'
 import Comps from './components/Comps'
 
@@ -35,11 +37,19 @@ function Teambuilder() {
 
   const tabClass = (key) =>
     `rounded border px-3.5 py-2 ${tab === key ? 'border-gold bg-surface-2 text-gold-light' : 'border-line text-muted hover:text-gold-light'}`
+  const patch = champions.data && patchOf(champions.data.version)
 
   return (
     <main className="mx-auto max-w-5xl px-4 pt-6 pb-16">
       <header className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-line pb-4">
-        <Title />
+        <div className="grid gap-1">
+          <Title />
+          {patch && <p className="text-xs text-muted">Patch en cours : {patch}</p>}
+          <MetaSources />
+          {patch && SOLOQ && SOLOQ.patch !== patch && (
+            <p className="text-xs text-warn">La méta soloQ date du patch {SOLOQ.patch} : elle sera mise à jour à la prochaine passe automatique.</p>
+          )}
+        </div>
         <nav className="flex gap-1">
           <button className={tabClass('comps')} onClick={() => setTab('comps')}>Compos</button>
           <button className={tabClass('players')} onClick={() => setTab('players')}>Joueurs</button>

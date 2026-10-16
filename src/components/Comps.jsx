@@ -112,7 +112,7 @@ function CompEditor({ comp, players, onClose, onSaved }) {
             className="field mt-1.5"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Ex : Teamfight / Poke / Early"
+            placeholder="Ex : Dive early / Réception / Poke"
             required
             autoFocus
           />
