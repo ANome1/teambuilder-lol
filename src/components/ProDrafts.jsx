@@ -4,6 +4,7 @@ import { PRO, strongPicks } from '../lib/meta'
 import { adaptToProDraft, classifyProDrafts, proExamples } from '../lib/proDrafts'
 import { ROLES, roleLabel } from '../lib/roles'
 import { ChampionIcon, useChamps } from './Champion'
+import { RoleIcon } from './Icon'
 
 const STATUS = {
   match: { label: 'Comme la référence', className: 'text-ok' },
@@ -33,64 +34,68 @@ export default function ProDrafts({ refs, analysis, pools, onPick }) {
   const examples = proExamples(ref, classified)
 
   return (
-    <div className="grid gap-4 text-sm">
-      <div className="flex flex-wrap gap-2">
+    <div className="grid gap-4">
+      <div className="flex flex-wrap items-center gap-2">
         {[...shown, ...(shown.includes(ref) ? [] : [ref])].map((r) => (
           <button
             key={r.key}
             type="button"
+            aria-pressed={r.key === ref.key}
             onClick={() => setSelectedKey(r.key)}
-            className={`rounded border px-2.5 py-1 text-xs ${
-              r.key === ref.key ? 'border-gold bg-surface-2 text-gold-light' : 'border-line text-muted hover:text-gold-light'
-            }`}
+            className={`chip ${r.key === ref.key ? 'chip-active' : ''}`}
           >
-            {r.name} · {pct(r.similarity)}
+            {r.name} <span className="font-mono">{pct(r.similarity)}</span>
           </button>
         ))}
-        <button type="button" className="btn-ghost text-xs" onClick={() => setShowAll((v) => !v)}>
+        <button type="button" className="btn-link ml-1" onClick={() => setShowAll((v) => !v)}>
           {showAll ? 'Moins de références' : `Toutes les références (${refs.length})`}
         </button>
       </div>
 
-      <p className="text-muted">
-        <span className="text-gold-light">{ARCHETYPE_LABELS[ref.archetype]}</span> — {ref.origin}
+      <p className="leading-relaxed text-soft">
+        <span className="font-semibold text-text">{ARCHETYPE_LABELS[ref.archetype]}</span> — {ref.origin}
       </p>
 
-      <ul className="grid gap-2">
-        {rows.map((row) => (
-          <li key={row.role} className="grid gap-2 rounded bg-surface-2 p-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="role-label w-16 shrink-0 text-gold">{roleLabel(row.role)}</span>
-              {row.current ? <ChampionIcon id={row.current.id} size={28} /> : <span className="text-muted">—</span>}
-              <span className={`text-xs ${STATUS[row.status].className}`}>{STATUS[row.status].label}</span>
+      <ul className="overflow-hidden rounded-xl border border-line">
+        {rows.map((row, i) => (
+          <li key={row.role} className={`grid gap-2 px-4 py-3 ${i > 0 ? 'border-t border-line-soft' : ''}`}>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <span className="role-label flex w-20 shrink-0 items-center gap-1.5 text-muted">
+                <RoleIcon role={row.role} />
+                {roleLabel(row.role)}
+              </span>
+              {row.current ? (
+                <ChampionIcon id={row.current.id} size={32} />
+              ) : (
+                <div className="size-8 shrink-0 rounded-lg border border-dashed border-field-line" />
+              )}
+              <span className={`text-xs font-semibold ${STATUS[row.status].className}`}>{STATUS[row.status].label}</span>
               <span className="ml-auto flex items-center gap-1">
                 <span className="text-xs text-muted">Pro :</span>
                 {row.refPool.map((id) => (
                   <span key={id} className={id === row.current?.id ? '' : 'opacity-60'}>
-                    <ChampionIcon id={id} size={22} />
+                    <ChampionIcon id={id} size={24} />
                   </span>
                 ))}
               </span>
             </div>
 
             {row.status === 'off' && row.missing.length > 0 && (
-              <p className="text-xs text-muted">
-                La référence attend ici : {row.missing.map((t) => t.label).join(', ')}.
-              </p>
+              <p className="text-xs text-muted">La référence attend ici : {row.missing.map((t) => t.label).join(', ')}.</p>
             )}
 
             {row.suggestions.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1.5">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs text-muted">{onPick ? 'Remplacer par :' : 'Options :'}</span>
                 {row.suggestions.map((s) => (
-                  <span key={s.id} className="flex items-center gap-1 text-xs">
+                  <span key={s.id} className="flex items-center gap-1 text-xs font-semibold">
                     <ChampionIcon
                       id={s.id}
                       size={28}
                       title={`${byId[s.id]?.name ?? s.id}${s.inPool ? ' — dans le pool du joueur' : ''}${s.inMeta ? ' — fort en ce moment' : ''}`}
                       onClick={onPick ? () => onPick(row.role, s.id) : undefined}
                     />
-                    {s.inPool && <span className="text-hextech">pool</span>}
+                    {s.inPool && <span className="text-accent-light">pool</span>}
                     {s.inMeta && <span className="text-ok">méta</span>}
                   </span>
                 ))}
@@ -100,17 +105,17 @@ export default function ProDrafts({ refs, analysis, pools, onPick }) {
         ))}
       </ul>
 
-      <ul className="list-disc space-y-1 pl-5 text-[#e8e6e1]/90">
+      <ul className="list-disc space-y-1.5 pl-5 leading-relaxed text-[#d2d6e0]">
         {ref.notes.map((n) => (
           <li key={n}>{n}</li>
         ))}
       </ul>
 
       {examples.length > 0 && (
-        <div className="grid gap-2 border-t border-line pt-3">
-          <span className="role-label text-gold">Joué en pro récemment</span>
+        <div className="grid gap-3 border-t border-line-soft pt-4">
+          <span className="role-label text-muted">Joué en pro récemment</span>
           {examples.map((d) => (
-            <div key={`${d.date}-${d.team}-${d.opponent}-${d.picks.join()}`} className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <div key={`${d.date}-${d.team}-${d.opponent}-${d.picks.join()}`} className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
               <span className="flex gap-1">
                 {d.picks.map((id, i) => (
                   <ChampionIcon
@@ -122,8 +127,8 @@ export default function ProDrafts({ refs, analysis, pools, onPick }) {
                   />
                 ))}
               </span>
-              <span className="text-xs text-muted">
-                <span className={d.win ? 'text-ok' : 'text-warn'}>{d.win ? 'Victoire' : 'Défaite'}</span> de {d.team} contre{' '}
+              <span className="text-xs text-soft">
+                <span className={`font-semibold ${d.win ? 'text-ok' : 'text-warn'}`}>{d.win ? 'Victoire' : 'Défaite'}</span> de {d.team} contre{' '}
                 {d.opponent} · {d.tournament} · patch {d.patch} · {date(d.date)}
               </span>
             </div>

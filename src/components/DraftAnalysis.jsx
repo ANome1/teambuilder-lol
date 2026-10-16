@@ -19,7 +19,7 @@ export default function DraftAnalysis({ picks, compact = false, pools, onPick })
   const refs = useMemo(() => matchProDrafts(a), [a])
   const [tab, setTab] = useState('summary')
 
-  if (a.champs.length === 0) return <p className="text-sm text-muted">Choisis des champions pour voir l'analyse.</p>
+  if (a.champs.length === 0) return <p className="text-[13px] text-muted">Choisis des champions pour voir l'analyse.</p>
 
   const offMeta = a.champs.filter((c) => isOffMeta(c.id, c.role))
   if (compact) return <CompactAnalysis a={a} reference={refs[0]} offMeta={offMeta} />
@@ -34,16 +34,17 @@ export default function DraftAnalysis({ picks, compact = false, pools, onPick })
   return (
     <div className="grid gap-4">
       <StyleHeader a={a} />
-      {a.plan && <p className="leading-relaxed">{a.plan.win}</p>}
+      {a.plan && <p className="text-[15px] leading-relaxed">{a.plan.win}</p>}
 
-      <nav className="flex flex-wrap gap-1 border-b border-line pb-2">
+      <nav aria-label="Analyse" className="flex flex-wrap gap-1 border-b border-line-soft pb-3">
         {tabs.map((t) => (
           <button
             key={t.key}
             type="button"
+            aria-current={tab === t.key ? 'page' : undefined}
             onClick={() => setTab(t.key)}
-            className={`rounded border px-2.5 py-1.5 text-sm sm:px-3 ${
-              tab === t.key ? 'border-gold bg-surface-2 text-gold-light' : 'border-transparent text-muted hover:text-gold-light'
+            className={`rounded-lg px-3 py-1.5 text-[13px] ${
+              tab === t.key ? 'bg-surface-2 font-semibold text-white' : 'font-medium text-soft hover:text-text'
             }`}
           >
             {t.label}
@@ -63,11 +64,11 @@ export default function DraftAnalysis({ picks, compact = false, pools, onPick })
 function StyleHeader({ a }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="rounded border border-gold bg-surface-2 px-2.5 py-1 text-sm font-semibold text-gold-light">
+      <span className="rounded-full border border-[#3a4766] bg-accent-soft px-3 py-1 text-[13px] font-semibold text-white">
         {a.archetype ? `${a.archetype.label} · ${pct(a.archetype.value)}` : 'Style pas encore défini'}
       </span>
-      {a.secondary && <span className="text-sm text-muted">tendance {a.secondary.label}</span>}
-      <span className="ml-auto rounded border border-line px-2.5 py-1 text-xs text-muted">Pic : {a.tempo.label}</span>
+      {a.secondary && <span className="text-[13px] text-soft">tendance {a.secondary.label}</span>}
+      <span className="ml-auto rounded-full border border-line px-3 py-1 text-xs text-soft">Pic : {a.tempo.label}</span>
     </div>
   )
 }
@@ -79,11 +80,11 @@ function CompactAnalysis({ a, reference, offMeta }) {
     ...a.warnings,
   ].slice(0, 2)
   return (
-    <div className="grid gap-2">
+    <div className="grid gap-2.5">
       <StyleHeader a={a} />
       {reference && (
         <p className="text-xs text-muted">
-          Proche de la référence pro <span className="text-gold-light">{reference.name}</span> ({pct(reference.similarity)})
+          Proche de la référence pro <span className="font-semibold text-text">{reference.name}</span> ({pct(reference.similarity)})
         </p>
       )}
       <Points items={alerts} kind="warn" />
@@ -97,23 +98,23 @@ function Summary({ a }) {
       <DamageBar physicalShare={a.physicalShare} />
       {a.warnings.length > 0 && (
         <div className="grid gap-2">
-          <span className="role-label text-gold">À surveiller</span>
+          <span className="role-label text-muted">À surveiller</span>
           <Points items={a.warnings} kind="warn" />
         </div>
       )}
       {a.strengths.length > 0 && (
         <div className="grid gap-2">
-          <span className="role-label text-gold">Points forts</span>
+          <span className="role-label text-muted">Points forts</span>
           <Points items={a.strengths.slice(0, 3)} kind="ok" />
         </div>
       )}
-      <details className="text-sm">
-        <summary className="cursor-pointer text-muted hover:text-gold-light">Détail des traits et des styles</summary>
-        <div className="mt-3 grid gap-5">
+      <details>
+        <summary className="cursor-pointer text-[13px] font-semibold text-soft hover:text-text">Détail des traits et des styles</summary>
+        <div className="mt-4 grid gap-5">
           <div className="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-5">
             {TRAITS.map((t) => (
-              <div key={t.key} className="flex items-center justify-between gap-2">
-                <span className="text-muted">{t.label}</span>
+              <div key={t.key} className="flex items-center justify-between gap-2 text-[13px]">
+                <span className="text-soft">{t.label}</span>
                 <Dots value={a.traits[t.key]} />
               </div>
             ))}
@@ -132,7 +133,7 @@ function Summary({ a }) {
 
 function Plan({ a }) {
   return (
-    <div className="grid gap-4 text-sm">
+    <div className="grid gap-5">
       <Phase title="Early" items={a.tempo.text} />
       <Phase title="Mid game" items={a.plan?.mid} />
       <Phase title="Late game" items={a.plan?.late} />
@@ -145,9 +146,9 @@ function Points({ items, kind }) {
   if (!items.length) return null
   const [icon, className] = kind === 'ok' ? ['✓', 'text-ok'] : ['⚠', 'text-warn']
   return (
-    <ul className="grid gap-1.5 text-sm">
+    <ul className="grid gap-1.5 text-[#d2d6e0]">
       {items.map((item) => (
-        <li key={item} className="flex gap-2">
+        <li key={item} className="flex gap-2 leading-relaxed">
           <span className={className}>{icon}</span>
           {item}
         </li>
@@ -160,19 +161,19 @@ function Points({ items, kind }) {
 function StyleScores({ archetypes, main }) {
   const gaps = main?.gaps ?? []
   return (
-    <div className="grid gap-3">
+    <div className="grid gap-4">
       {FAMILIES.map((family) => (
-        <div key={family.key} className="grid gap-1">
-          <span className="role-label text-gold">{family.label}</span>
+        <div key={family.key} className="grid gap-1.5">
+          <span className="role-label text-muted">{family.label}</span>
           {archetypes
             .filter((arch) => arch.family === family.key)
             .map((arch) => (
               <div key={arch.key} className="grid grid-cols-[11rem_1fr_3rem] items-center gap-2 text-xs">
-                <span className={arch.key === main?.key ? 'text-gold-light' : 'text-muted'}>{arch.label}</span>
+                <span className={arch.key === main?.key ? 'font-semibold text-white' : 'text-soft'}>{arch.label}</span>
                 <div className="h-1.5 overflow-hidden rounded-full bg-line">
-                  <div className={arch.key === main?.key ? 'h-full bg-gold' : 'h-full bg-muted'} style={{ width: pct(arch.value) }} />
+                  <div className={arch.key === main?.key ? 'h-full bg-accent' : 'h-full bg-[#3a4152]'} style={{ width: pct(arch.value) }} />
                 </div>
-                <span className="text-right text-muted">{pct(arch.value)}</span>
+                <span className="text-right font-mono text-muted">{pct(arch.value)}</span>
               </div>
             ))}
         </div>
@@ -190,10 +191,10 @@ function StyleScores({ archetypes, main }) {
 function DamageBar({ physicalShare }) {
   const physical = Math.round(physicalShare * 100)
   return (
-    <div className="grid gap-1">
-      <div className="flex justify-between text-xs">
-        <span className="text-physical">Physique {physical}%</span>
-        <span className="text-magic">Magique {100 - physical}%</span>
+    <div className="grid gap-1.5">
+      <div className="flex justify-between text-xs font-semibold">
+        <span className="text-physical">Physique {physical} %</span>
+        <span className="text-magic">Magique {100 - physical} %</span>
       </div>
       <div className="flex h-2 overflow-hidden rounded-full bg-line">
         <div className="bg-physical" style={{ width: `${physical}%` }} />
@@ -210,7 +211,7 @@ function Dots({ value, max = 5 }) {
       {Array.from({ length: max }, (_, i) => (
         <span
           key={i}
-          className={`size-2 rounded-full ${i + 1 <= value ? 'bg-gold' : i < value ? 'bg-linear-to-r from-gold from-50% to-line to-50%' : 'bg-line'}`}
+          className={`size-2 rounded-full ${i + 1 <= value ? 'bg-accent' : i < value ? 'bg-linear-to-r from-accent from-50% to-line to-50%' : 'bg-line'}`}
         />
       ))}
     </span>
@@ -222,8 +223,8 @@ function Phase({ title, items }) {
   if (!items?.length) return null
   return (
     <div>
-      <span className="role-label text-gold">{title}</span>
-      <ul className="mt-1.5 list-disc space-y-1.5 pl-5 leading-relaxed text-[#e8e6e1]/90">
+      <span className="role-label text-muted">{title}</span>
+      <ul className="mt-2 list-disc space-y-1.5 pl-5 leading-relaxed text-[#d2d6e0]">
         {items.map((t) => (
           <li key={t}>{t}</li>
         ))}

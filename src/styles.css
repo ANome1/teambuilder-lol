@@ -2,21 +2,6 @@
 
 /* Palette sombre type dashboard (inspirée de dpm.lol) */
 @theme {
-<<<<<<< HEAD
-  --color-bg: #0a0e17;
-  --color-surface: #121a28;
-  --color-surface-2: #1a2436;
-  --color-line: #2a3650;
-  --color-muted: #8b93a7;
-  --color-gold: #c8aa6e;
-  --color-gold-light: #f0e6d2;
-  --color-hextech: #0ac8b9;
-  --color-danger: #e0565b;
-  --color-ok: #4cc38a;
-  --color-warn: #e8b04a;
-  --color-physical: #e07b4f;
-  --color-magic: #6f8dff;
-=======
   --font-sans: 'Geist', system-ui, sans-serif;
   --font-mono: 'Geist Mono', ui-monospace, monospace;
 
@@ -36,7 +21,12 @@
   --color-accent-soft: #1a2140;
   --color-live: #3ddc97;
   --color-danger: #ff6b6b;
->>>>>>> 622c22d (feat: enhance UI with new icons, improved layout, and updated styles)
+
+  /* Analyse de draft : points forts et alertes, dégâts physiques et magiques */
+  --color-ok: #3ddc97;
+  --color-warn: #f5b74f;
+  --color-physical: #ff8f5a;
+  --color-magic: #a58bff;
 }
 
 @layer base {
@@ -61,6 +51,10 @@
   .btn-icon {
     @apply grid size-10 place-items-center rounded-lg text-soft hover:bg-surface-2 hover:text-text;
   }
+  /* Bouton texte discret : afficher / masquer, voir plus. */
+  .btn-link {
+    @apply text-[13px] font-semibold text-accent-light hover:text-white;
+  }
   .field {
     @apply h-11 w-full rounded-[10px] border border-field-line bg-panel px-3.5 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none;
   }
@@ -81,5 +75,12 @@
   }
   .pill {
     @apply inline-flex h-10 items-center gap-2 rounded-full border px-4;
+  }
+  /* Petite pastille de choix (styles, références) : .chip, + .chip-active quand elle est sélectionnée. */
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-[#262c3a] px-3 py-1 text-xs font-medium text-soft hover:text-white;
+  }
+  .chip-active {
+    @apply border-[#3a4766] bg-accent-soft font-semibold text-white;
   }
 }

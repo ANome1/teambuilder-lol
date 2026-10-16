@@ -3,11 +3,7 @@ import { isConfigured, useTable } from './lib/supabase'
 import { patchOf, useChampions } from './lib/champions'
 import { SOLOQ } from './lib/meta'
 import { ChampionsContext } from './components/Champion'
-<<<<<<< HEAD
-import { MetaSources } from './components/MetaCheck'
-=======
 import { Icon } from './components/Icon'
->>>>>>> 622c22d (feat: enhance UI with new icons, improved layout, and updated styles)
 import Players from './components/Players'
 import Comps from './components/Comps'
 
@@ -47,27 +43,10 @@ function Teambuilder() {
   const loading = !champions.data || players.loading || comps.loading
 
   const tabClass = (key) =>
-<<<<<<< HEAD
-    `rounded border px-3.5 py-2 ${tab === key ? 'border-gold bg-surface-2 text-gold-light' : 'border-line text-muted hover:text-gold-light'}`
-  const patch = champions.data && patchOf(champions.data.version)
-
-  return (
-    <main className="mx-auto max-w-5xl px-4 pt-6 pb-16">
-      <header className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-line pb-4">
-        <div className="grid gap-1">
-          <Title />
-          {patch && <p className="text-xs text-muted">Patch en cours : {patch}</p>}
-          <MetaSources />
-          {patch && SOLOQ && SOLOQ.patch !== patch && (
-            <p className="text-xs text-warn">La méta soloQ date du patch {SOLOQ.patch} : elle sera mise à jour à la prochaine passe automatique.</p>
-          )}
-        </div>
-        <nav className="flex gap-1">
-          <button className={tabClass('comps')} onClick={() => setTab('comps')}>Compos</button>
-          <button className={tabClass('players')} onClick={() => setTab('players')}>Joueurs</button>
-        </nav>
-=======
     `rounded-lg px-3.5 py-2 ${tab === key ? 'bg-surface-2 font-semibold text-white' : 'font-medium text-soft hover:text-text'}`
+  const patch = champions.data && patchOf(champions.data.version)
+  // Juste après un nouveau patch, la méta soloQ a un temps de retard jusqu'à la prochaine mise à jour automatique.
+  const staleMeta = patch && SOLOQ && SOLOQ.patch !== patch
 
   return (
     <>
@@ -82,12 +61,19 @@ function Teambuilder() {
               Joueurs
             </button>
           </nav>
-          <span className="ml-auto flex items-center gap-2 text-[13px] whitespace-nowrap text-soft">
-            <span className="size-2 rounded-full bg-live" />
-            Synchro en direct
+          <span className="ml-auto flex flex-wrap items-center gap-x-5 gap-y-1 text-[13px] whitespace-nowrap text-soft">
+            {patch && (
+              <span title={staleMeta ? `La méta soloQ date du patch ${SOLOQ.patch} : elle sera mise à jour à la prochaine passe automatique.` : undefined}>
+                Patch <span className="font-mono text-text">{patch}</span>
+                {staleMeta && <span className="text-warn"> · méta du {SOLOQ.patch}</span>}
+              </span>
+            )}
+            <span className="flex items-center gap-2">
+              <span className="size-2 rounded-full bg-live" />
+              Synchro en direct
+            </span>
           </span>
         </div>
->>>>>>> 622c22d (feat: enhance UI with new icons, improved layout, and updated styles)
       </header>
 
       <main className="mx-auto max-w-[1240px] px-6 pt-10 pb-20">
