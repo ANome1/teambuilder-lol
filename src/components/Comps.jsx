@@ -2,9 +2,14 @@ import { useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { ROLES } from '../lib/roles'
 import { ChampionIcon, ChampionSearch, useChamps } from './Champion'
+<<<<<<< HEAD
 import CompSuggestions from './CompSuggestions'
 import DraftAnalysis from './DraftAnalysis'
 import Modal from './Modal'
+=======
+import { Icon, RoleIcon } from './Icon'
+import Modal, { ModalFooter } from './Modal'
+>>>>>>> 622c22d (feat: enhance UI with new icons, improved layout, and updated styles)
 
 export default function Comps({ comps, players, reload }) {
   const [editing, setEditing] = useState(null) // null | 'new' | comp
@@ -24,9 +29,17 @@ export default function Comps({ comps, players, reload }) {
 
   return (
     <section>
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold text-gold-light">Compos ({comps.length})</h2>
-        <button className="btn" onClick={() => setEditing('new')}>+ Nouvelle compo</button>
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-5">
+        <div>
+          <p className="eyebrow mb-1.5">Préparation tournoi</p>
+          <h1 className="text-[34px] font-bold tracking-tight">
+            Compos <span className="font-mono text-[22px] font-medium text-muted">{comps.length}</span>
+          </h1>
+        </div>
+        <button className="btn" onClick={() => setEditing('new')}>
+          <Icon name="plus" size={16} strokeWidth={2.6} />
+          Nouvelle compo
+        </button>
       </div>
 
       {comps.length === 0 && <p className="text-muted">Aucune compo pour l'instant.</p>}
@@ -34,35 +47,59 @@ export default function Comps({ comps, players, reload }) {
       <div className="grid gap-4">
         {comps.map((c) => (
           <article key={c.id} className="card">
-            <header className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <h3 className="font-semibold text-gold-light">{c.name}</h3>
-              <div className="flex gap-0.5">
-                <button className="btn-ghost" onClick={() => setEditing(c)}>Modifier</button>
-                <button className="btn-ghost" onClick={() => duplicate(c)}>Dupliquer</button>
-                <button className="btn-ghost hover:text-danger" onClick={() => remove(c)}>Supprimer</button>
+            <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft px-5 py-4">
+              <h2 className="text-lg font-bold">{c.name}</h2>
+              <div className="flex gap-1">
+                <button className="btn-icon" onClick={() => setEditing(c)} aria-label={`Modifier ${c.name}`}>
+                  <Icon name="edit" />
+                </button>
+                <button className="btn-icon" onClick={() => duplicate(c)} aria-label={`Dupliquer ${c.name}`}>
+                  <Icon name="copy" />
+                </button>
+                <button className="btn-icon hover:text-danger" onClick={() => remove(c)} aria-label={`Supprimer ${c.name}`}>
+                  <Icon name="trash" />
+                </button>
               </div>
             </header>
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-px bg-line-soft">
               {ROLES.map((r) => {
                 const pick = c.picks[r.key] ?? {}
                 return (
-                  <div key={r.key} className="flex min-w-0 flex-col items-center gap-1 text-center">
-                    <span className="role-label text-gold">{r.label}</span>
-                    {pick.champion ? (
-                      <ChampionIcon id={pick.champion} size={56} />
-                    ) : (
-                      <div className="size-14 rounded border border-dashed border-line" />
-                    )}
-                    <span className="text-sm break-words">{byId[pick.champion]?.name ?? '—'}</span>
-                    <span className="text-xs break-words text-muted">{playerName(pick.player_id) ?? '—'}</span>
+                  <div key={r.key} className="flex min-w-0 flex-col gap-3 bg-surface px-4 pt-[18px] pb-5">
+                    <span className="role-label flex items-center gap-1.5 text-muted">
+                      <RoleIcon role={r.key} />
+                      {r.label}
+                    </span>
+                    <div className="flex min-w-0 items-center gap-3">
+                      {pick.champion ? (
+                        <ChampionIcon id={pick.champion} size={56} />
+                      ) : (
+                        <div className="size-14 shrink-0 rounded-lg border border-dashed border-field-line" />
+                      )}
+                      <span className="flex min-w-0 flex-col gap-0.5">
+                        <span className="truncate text-[15px] font-bold">{byId[pick.champion]?.name ?? '—'}</span>
+                        <span className="truncate text-[13px] text-soft">{playerName(pick.player_id) ?? '—'}</span>
+                      </span>
+                    </div>
                   </div>
                 )
               })}
             </div>
+<<<<<<< HEAD
             <div className="mt-3 border-t border-line pt-3">
               <DraftAnalysis picks={c.picks} compact />
             </div>
             {c.notes &&<p className="mt-3 border-t border-line pt-3 whitespace-pre-wrap text-muted">{c.notes}</p>}
+=======
+
+            {c.notes && (
+              <div className="border-t border-line-soft bg-panel px-5 py-4">
+                <p className="role-label mb-1.5 text-muted">Notes</p>
+                <p className="leading-relaxed whitespace-pre-wrap text-[#d2d6e0]">{c.notes}</p>
+              </div>
+            )}
+>>>>>>> 622c22d (feat: enhance UI with new icons, improved layout, and updated styles)
           </article>
         ))}
       </div>
@@ -117,6 +154,7 @@ function CompEditor({ comp, players, onClose, onSaved }) {
   }
 
   return (
+<<<<<<< HEAD
     <Modal title={comp ? `Modifier ${comp.name}` : 'Nouvelle compo'} onClose={onClose} wide>
       {/* Sur grand écran : la compo à gauche, les idées et l'analyse à droite, qui restent visibles pendant qu'on remplit les postes.
           Sur mobile, les colonnes s'effacent (contents) et l'ordre suit les classes order-* : nom, idées, postes, analyse, notes. */}
@@ -129,23 +167,52 @@ function CompEditor({ comp, players, onClose, onSaved }) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ex : Dive early / Réception / Poke"
+=======
+    <Modal eyebrow="Compo" title={comp ? `Modifier ${comp.name}` : 'Nouvelle compo'} onClose={onClose}>
+      <form onSubmit={submit}>
+        <div className="grid gap-5 px-6 py-5">
+          <label className="grid gap-2">
+            <span className="label">Nom</span>
+            <input
+              className="field text-[15px]"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Ex : Teamfight / Poke / Early"
+>>>>>>> 622c22d (feat: enhance UI with new icons, improved layout, and updated styles)
               required
               autoFocus
             />
           </label>
 
+<<<<<<< HEAD
           <div className="order-3 grid gap-4">
             {ROLES.map((r) => {
+=======
+          <div className="overflow-hidden rounded-xl border border-line">
+            {ROLES.map((r, i) => {
+>>>>>>> 622c22d (feat: enhance UI with new icons, improved layout, and updated styles)
               const pick = picks[r.key] ?? {}
               const player = players.find((p) => p.id === pick.player_id)
               // Les joueurs qui jouent ce rôle d'abord, les autres ensuite.
               const sorted = [...players].sort((a, b) => rank(a, r.key) - rank(b, r.key))
               return (
+<<<<<<< HEAD
                 <div key={r.key} className="grid gap-2 rounded bg-surface-2 p-3">
                   <div className="flex items-center gap-2.5">
                     <span className="role-label w-16 shrink-0 text-gold">{r.label}</span>
                     <select
                       className="field flex-1"
+=======
+                <div key={r.key} className={`grid gap-3 px-4 py-3.5 ${i > 0 ? 'border-t border-line-soft' : ''}`}>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                    <span className="flex w-24 shrink-0 items-center gap-2 font-bold">
+                      <RoleIcon role={r.key} size={16} className="text-accent-light" />
+                      {r.label}
+                    </span>
+                    <select
+                      className="field min-w-40 flex-1"
+                      aria-label={`Joueur ${r.label}`}
+>>>>>>> 622c22d (feat: enhance UI with new icons, improved layout, and updated styles)
                       value={pick.player_id ?? ''}
                       onChange={(e) => setPick(r.key, { player_id: e.target.value || null })}
                     >
@@ -157,8 +224,15 @@ function CompEditor({ comp, players, onClose, onSaved }) {
                         </option>
                       ))}
                     </select>
+<<<<<<< HEAD
                     {pick.champion && (
                       <ChampionIcon id={pick.champion} size={40} title="Cliquer pour retirer" onClick={() => setPick(r.key, { champion: null })} />
+=======
+                    {pick.champion ? (
+                      <ChampionIcon id={pick.champion} size={44} title="Cliquer pour retirer" onClick={() => setPick(r.key, { champion: null })} />
+                    ) : (
+                      <div className="size-11 shrink-0 rounded-lg border border-dashed border-field-line" />
+>>>>>>> 622c22d (feat: enhance UI with new icons, improved layout, and updated styles)
                     )}
                   </div>
                   <ChampionSearch
@@ -171,6 +245,7 @@ function CompEditor({ comp, players, onClose, onSaved }) {
               )
             })}
           </div>
+<<<<<<< HEAD
 
           <div className="order-5 grid gap-4">
             <label className="label">
@@ -197,7 +272,16 @@ function CompEditor({ comp, players, onClose, onSaved }) {
             <h4 className="font-semibold text-gold-light">Analyse de la draft</h4>
             <DraftAnalysis picks={picks} pools={pools} onPick={(role, id) => setPick(role, { champion: id })} />
           </div>
+=======
+
+          <label className="grid gap-2">
+            <span className="label">Notes (win condition, bans, plan de jeu…)</span>
+            <textarea className="field resize-y" value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} />
+          </label>
+>>>>>>> 622c22d (feat: enhance UI with new icons, improved layout, and updated styles)
         </div>
+
+        <ModalFooter error={error} onCancel={onClose} saving={saving} disabled={!name.trim()} />
       </form>
     </Modal>
   )

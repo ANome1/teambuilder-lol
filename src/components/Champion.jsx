@@ -12,7 +12,7 @@ export function ChampionIcon({ id, size = 40, onClick, title }) {
   if (!champ) return null
   const img = (
     <img
-      className="block rounded border border-gold"
+      className="block rounded-lg ring-1 ring-white/10"
       src={championIcon(version, id)}
       alt={champ.name}
       title={title ?? champ.name}
@@ -22,7 +22,7 @@ export function ChampionIcon({ id, size = 40, onClick, title }) {
     />
   )
   return onClick ? (
-    <button type="button" className="rounded hover:brightness-125 [&>img]:hover:border-hextech" onClick={onClick}>
+    <button type="button" className="rounded-lg hover:brightness-125 [&>img]:hover:ring-2 [&>img]:hover:ring-accent" onClick={onClick}>
       {img}
     </button>
   ) : (

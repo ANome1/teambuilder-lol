@@ -1,7 +1,8 @@
 @import 'tailwindcss';
 
-/* Palette inspirée du client LoL */
+/* Palette sombre type dashboard (inspirée de dpm.lol) */
 @theme {
+<<<<<<< HEAD
   --color-bg: #0a0e17;
   --color-surface: #121a28;
   --color-surface-2: #1a2436;
@@ -15,6 +16,27 @@
   --color-warn: #e8b04a;
   --color-physical: #e07b4f;
   --color-magic: #6f8dff;
+=======
+  --font-sans: 'Geist', system-ui, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, monospace;
+
+  --color-bg: #0b0d12;
+  --color-header: #0e1117;
+  --color-panel: #0f1218;
+  --color-surface: #12151c;
+  --color-surface-2: #1a1f2b;
+  --color-line: #1f2430;
+  --color-line-soft: #1b202b;
+  --color-field-line: #2e3546;
+  --color-text: #e8eaf0;
+  --color-soft: #a3aabb;
+  --color-muted: #8a91a3;
+  --color-accent: #6e8bff;
+  --color-accent-light: #a9baff;
+  --color-accent-soft: #1a2140;
+  --color-live: #3ddc97;
+  --color-danger: #ff6b6b;
+>>>>>>> 622c22d (feat: enhance UI with new icons, improved layout, and updated styles)
 }
 
 @layer base {
@@ -22,7 +44,7 @@
     color-scheme: dark;
   }
   body {
-    @apply min-h-screen bg-bg text-[#e8e6e1];
+    @apply min-h-screen bg-bg font-sans text-sm text-text antialiased;
   }
   button:not(:disabled) {
     @apply cursor-pointer;
@@ -31,21 +53,33 @@
 
 @layer components {
   .btn {
-    @apply rounded border border-gold bg-gradient-to-b from-[#1e2a3e] to-surface px-3.5 py-2 text-gold-light hover:border-gold-light disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex h-11 items-center justify-center gap-2 rounded-[10px] bg-accent px-[18px] font-bold text-bg hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50;
   }
-  .btn-ghost {
-    @apply rounded border border-transparent px-2 py-1 text-muted hover:border-line hover:text-gold-light;
+  .btn-secondary {
+    @apply inline-flex h-11 items-center justify-center rounded-[10px] border border-field-line px-[18px] font-semibold text-text hover:bg-surface-2;
+  }
+  .btn-icon {
+    @apply grid size-10 place-items-center rounded-lg text-soft hover:bg-surface-2 hover:text-text;
   }
   .field {
-    @apply w-full rounded border border-line bg-bg px-2.5 py-2 focus:border-hextech focus:outline-none;
+    @apply h-11 w-full rounded-[10px] border border-field-line bg-panel px-3.5 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none;
+  }
+  textarea.field {
+    @apply h-auto py-3 leading-relaxed;
   }
   .label {
-    @apply block text-sm text-muted;
+    @apply block text-xs font-bold tracking-[0.08em] text-soft uppercase;
+  }
+  .eyebrow {
+    @apply text-xs font-semibold tracking-[0.12em] text-muted uppercase;
   }
   .card {
-    @apply rounded-md border border-line bg-surface p-4;
+    @apply overflow-hidden rounded-[14px] border border-line bg-surface;
   }
   .role-label {
-    @apply text-xs tracking-wider uppercase;
+    @apply text-[11px] font-bold tracking-[0.1em] uppercase;
+  }
+  .pill {
+    @apply inline-flex h-10 items-center gap-2 rounded-full border px-4;
   }
 }

@@ -2,10 +2,15 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { ROLES, roleLabel } from '../lib/roles'
 import { ChampionIcon, ChampionSearch } from './Champion'
-import Modal from './Modal'
+import { Icon, RoleIcon } from './Icon'
+import Modal, { ModalFooter } from './Modal'
+
+const pillClass = (active) =>
+  `pill ${active ? 'border-[#3a4766] bg-accent-soft font-semibold text-white' : 'border-[#262c3a] bg-surface font-medium text-[#c2c7d3] hover:text-white'}`
 
 export default function Players({ players, reload }) {
   const [editing, setEditing] = useState(null) // null | 'new' | player
+  const [filter, setFilter] = useState(null) // null = tous, sinon clé de rôle
 
   const remove = async (player) => {
     if (!confirm(`Supprimer ${player.name} ?`)) return
@@ -13,35 +18,81 @@ export default function Players({ players, reload }) {
     reload()
   }
 
+  const shown = filter ? players.filter((p) => p.roles.includes(filter)) : players
+
   return (
     <section>
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold text-gold-light">Joueurs ({players.length})</h2>
-        <button className="btn" onClick={() => setEditing('new')}>+ Ajouter un joueur</button>
+      <div className="mb-5 flex flex-wrap items-end justify-between gap-5">
+        <div>
+          <p className="eyebrow mb-1.5">Roster</p>
+          <h1 className="text-[34px] font-bold tracking-tight">
+            Joueurs <span className="font-mono text-[22px] font-medium text-muted">{players.length}</span>
+          </h1>
+        </div>
+        <button className="btn" onClick={() => setEditing('new')}>
+          <Icon name="plus" size={16} strokeWidth={2.6} />
+          Ajouter un joueur
+        </button>
+      </div>
+
+      <div role="group" aria-label="Filtrer par rôle" className="mb-6 flex flex-wrap gap-2">
+        <button type="button" aria-pressed={!filter} className={pillClass(!filter)} onClick={() => setFilter(null)}>
+          Tous
+        </button>
+        {ROLES.map((r) => (
+          <button key={r.key} type="button" aria-pressed={filter === r.key} className={pillClass(filter === r.key)} onClick={() => setFilter(r.key)}>
+            <RoleIcon role={r.key} />
+            {r.label}
+          </button>
+        ))}
       </div>
 
       {players.length === 0 && <p className="text-muted">Aucun joueur. Ajoute-toi en premier !</p>}
+      {players.length > 0 && shown.length === 0 && <p className="text-muted">Aucun joueur ne joue {roleLabel(filter)}.</p>}
 
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4">
-        {players.map((p) => (
-          <article key={p.id} className="card">
-            <header className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <h3 className="font-semibold text-gold-light">{p.name}</h3>
-              <div className="flex gap-0.5">
-                <button className="btn-ghost" onClick={() => setEditing(p)}>Modifier</button>
-                <button className="btn-ghost hover:text-danger" onClick={() => remove(p)}>Supprimer</button>
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,360px),1fr))] gap-4">
+        {shown.map((p) => (
+          <article key={p.id} className="card flex flex-col">
+            <header className="flex items-center gap-3.5 border-b border-line-soft px-[18px] pt-[18px] pb-4">
+              <span className="grid size-11 shrink-0 place-items-center rounded-full bg-[#1f2533] text-base font-bold uppercase ring-2 ring-accent ring-inset">
+                {p.name.slice(0, 1)}
+              </span>
+              <div className="min-w-0 flex-1">
+                <h2 className="mb-1 truncate text-[17px] font-bold">{p.name}</h2>
+                {p.roles[0] && (
+                  <span className="flex items-center gap-1.5 text-xs font-semibold text-accent-light">
+                    <RoleIcon role={p.roles[0]} size={13} />
+                    Main {roleLabel(p.roles[0])}
+                  </span>
+                )}
+              </div>
+              <div className="flex">
+                <button className="btn-icon" onClick={() => setEditing(p)} aria-label={`Modifier ${p.name}`}>
+                  <Icon name="edit" />
+                </button>
+                <button className="btn-icon hover:text-danger" onClick={() => remove(p)} aria-label={`Supprimer ${p.name}`}>
+                  <Icon name="trash" />
+                </button>
               </div>
             </header>
-            {p.roles.map((role, i) => (
-              <div key={role} className="mt-2 flex items-center gap-2.5">
-                <span className={`role-label w-16 shrink-0 ${i === 0 ? 'text-gold' : 'text-muted'}`}>{roleLabel(role)}</span>
-                <div className="flex flex-wrap gap-1">
-                  {(p.champions[role] ?? []).map((id) => (
-                    <ChampionIcon key={id} id={id} size={32} />
-                  ))}
+            <div className="flex flex-col gap-0.5 px-2.5 pt-2.5 pb-3">
+              {p.roles.map((role, i) => (
+                <div key={role} className="flex items-center gap-3 rounded-[10px] p-2">
+                  <span className="flex w-[92px] shrink-0 flex-col gap-0.5">
+                    <span className={`flex items-center gap-1.5 text-[13px] font-bold ${i === 0 ? 'text-text' : 'text-soft'}`}>
+                      <RoleIcon role={role} />
+                      {roleLabel(role)}
+                    </span>
+                    <span className="font-mono text-[11px] text-muted">#{i + 1}</span>
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(p.champions[role] ?? []).map((id) => (
+                      <ChampionIcon key={id} id={id} size={40} />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </article>
         ))}
       </div>
@@ -92,61 +143,55 @@ function PlayerForm({ player, onClose, onSaved }) {
   }
 
   return (
-    <Modal title={player ? `Modifier ${player.name}` : 'Nouveau joueur'} onClose={onClose}>
-      <form onSubmit={submit} className="grid gap-4">
-        <label className="label">
-          Pseudo
-          <input className="field mt-1.5" value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
-        </label>
+    <Modal eyebrow="Joueur" title={player ? `Modifier ${player.name}` : 'Nouveau joueur'} onClose={onClose}>
+      <form onSubmit={submit}>
+        <div className="grid gap-5 px-6 py-5">
+          <label className="grid gap-2">
+            <span className="label">Pseudo</span>
+            <input className="field text-[15px]" value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
+          </label>
 
-        <div>
-          <span className="label">Rôles (dans l'ordre de préférence)</span>
-          <div className="mt-1.5 flex flex-wrap gap-1.5">
-            {ROLES.map((r) => {
-              const index = roles.indexOf(r.key)
-              const active = index >= 0
-              return (
-                <button
-                  type="button"
-                  key={r.key}
-                  className={`flex items-center gap-1.5 rounded border px-3.5 py-2 ${
-                    active ? 'border-gold bg-surface-2 text-gold-light' : 'border-line text-muted hover:text-gold-light'
-                  }`}
-                  onClick={() => toggleRole(r.key)}
-                >
-                  {active && (
-                    <span className="grid size-[18px] place-items-center rounded-full bg-gold text-[0.7rem] font-bold text-bg">
-                      {index + 1}
-                    </span>
-                  )}
-                  {r.label}
-                </button>
-              )
-            })}
+          <div className="grid gap-2">
+            <span className="label">Rôles (dans l'ordre de préférence)</span>
+            <div className="flex flex-wrap gap-2">
+              {ROLES.map((r) => {
+                const index = roles.indexOf(r.key)
+                const active = index >= 0
+                return (
+                  <button type="button" key={r.key} aria-pressed={active} className={pillClass(active)} onClick={() => toggleRole(r.key)}>
+                    {active ? (
+                      <span className="grid size-[18px] place-items-center rounded-full bg-accent font-mono text-[11px] font-bold text-bg">
+                        {index + 1}
+                      </span>
+                    ) : (
+                      <RoleIcon role={r.key} />
+                    )}
+                    {r.label}
+                  </button>
+                )
+              })}
+            </div>
           </div>
+
+          {roles.map((role) => (
+            <div key={role} className="grid gap-2.5 rounded-xl border border-line bg-panel p-4">
+              <span className="flex items-center gap-2 font-bold">
+                <RoleIcon role={role} size={16} className="text-accent-light" />
+                Champions {roleLabel(role)}
+              </span>
+              {champions[role]?.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {champions[role].map((id) => (
+                    <ChampionIcon key={id} id={id} size={40} title="Cliquer pour retirer" onClick={() => removeChamp(role, id)} />
+                  ))}
+                </div>
+              )}
+              <ChampionSearch onPick={(id) => addChamp(role, id)} exclude={champions[role] ?? []} />
+            </div>
+          ))}
         </div>
 
-        {roles.map((role) => (
-          <div key={role} className="grid gap-2">
-            <span className="label">Champions {roleLabel(role)}</span>
-            {champions[role]?.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {champions[role].map((id) => (
-                  <ChampionIcon key={id} id={id} size={36} title="Cliquer pour retirer" onClick={() => removeChamp(role, id)} />
-                ))}
-              </div>
-            )}
-            <ChampionSearch onPick={(id) => addChamp(role, id)} exclude={champions[role] ?? []} />
-          </div>
-        ))}
-
-        {error && <p className="text-danger">{error}</p>}
-        <div className="flex justify-end gap-2">
-          <button type="button" className="btn-ghost" onClick={onClose}>Annuler</button>
-          <button type="submit" className="btn" disabled={saving || !name.trim() || roles.length === 0}>
-            {saving ? 'Enregistrement…' : 'Enregistrer'}
-          </button>
-        </div>
+        <ModalFooter error={error} onCancel={onClose} saving={saving} disabled={!name.trim() || roles.length === 0} />
       </form>
     </Modal>
   )
