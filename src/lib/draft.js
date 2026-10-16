@@ -42,6 +42,7 @@ export const FAMILIES = [
 // Chaque archétype décrit la compo idéale par des objectifs : { métrique: valeur visée }.
 // - core : ce qui définit le style. Sans lui, l'archétype ne tient pas.
 // - support : ce qui le rend efficace (bonus jusqu'à +30 %).
+// - peak : moment fort visé par le style (1 = early, 2 = mid game, 3 = late game), pour proposer des compos cohérentes.
 // - rivals : traits des styles opposés. Aller au fight (engage, plongée) et recevoir s'excluent : une compo
 //   qui a nettement plus de réception que d'engage joue la réception, même si elle a de quoi engager.
 // Score = adéquation core × (0.7 + 0.3 × adéquation support) × équilibre face aux rivaux, toujours entre 0 et 1,
@@ -50,6 +51,7 @@ const ARCHETYPES = [
   {
     key: 'engage',
     family: 'teamfight',
+    peak: 2,
     label: 'Engage / Wombo',
     core: { E: 3 },
     support: { C: 3, F: 2, D: 2 },
@@ -69,6 +71,7 @@ const ARCHETYPES = [
   {
     key: 'dive',
     family: 'teamfight',
+    peak: 1.5,
     label: 'Dive',
     core: { V: 3 },
     support: { C: 2, E: 1 },
@@ -88,6 +91,7 @@ const ARCHETYPES = [
   {
     key: 'frontToBack',
     family: 'teamfight',
+    peak: 2.3,
     label: 'Front-to-back',
     core: { F: 2, D: 2 },
     support: { C: 2, P: 1 },
@@ -107,6 +111,7 @@ const ARCHETYPES = [
   {
     key: 'counter',
     family: 'teamfight',
+    peak: 2.2,
     label: 'Réception / Contre-engage',
     core: { R: 2 },
     support: { F: 1, D: 2, C: 2 },
@@ -126,6 +131,7 @@ const ARCHETYPES = [
   {
     key: 'protect',
     family: 'teamfight',
+    peak: 2.6,
     label: 'Protect the carry',
     // Un support tank qui peel (Braum) fait du front-to-back ; protect the carry, c'est un enchanteur sur un hypercarry.
     core: { lateCarries: 1, enchanters: 1 },
@@ -145,6 +151,7 @@ const ARCHETYPES = [
   {
     key: 'poke',
     family: 'other',
+    peak: 2,
     label: 'Poke / Siège',
     core: { K: 3 },
     support: { R: 1, C: 1 },
@@ -163,6 +170,7 @@ const ARCHETYPES = [
   {
     key: 'pick',
     family: 'other',
+    peak: 1.9,
     label: 'Pick / Catch',
     // 2 assassins ne font pas une compo pick (la plupart des drafts pro en ont 2) : il en faut au moins 3.
     core: { A: 3 },
@@ -182,6 +190,7 @@ const ARCHETYPES = [
   {
     key: 'split',
     family: 'other',
+    peak: 2.4,
     label: 'Split push',
     // Un seul split pusher ne suffit pas à faire une compo split (1-3-1 ou 1-4 avec un 2e side laner).
     // Les 4 autres doivent pouvoir tenir sans fight : réception et waveclear/poke.
@@ -227,7 +236,7 @@ const TEMPO = {
   },
 }
 
-const MIN_FIT = 0.35
+export const MIN_FIT = 0.35
 
 // À score égal, le style le plus spécifique l'emporte : presque toute compo a un peu d'engage et de frontline,
 // le front-to-back est le style par défaut. Les plongeurs étant souvent aussi des assassins, 3 plongeurs font un dive avant un pick.
@@ -260,16 +269,42 @@ const gapsOf = (metrics, goals, core) =>
     .filter(([k, target]) => metrics[k] < target)
     .map(([k, target]) => ({ key: k, label: METRIC_LABELS[k], have: metrics[k], need: target, core }))
 
-function scoreArchetype(archetype, metrics) {
-  const core = fit(metrics, archetype.core)
-  const support = fit(metrics, archetype.support)
-  const [main] = Object.keys(archetype.core)
-  const rival = (archetype.rivals ?? []).reduce((sum, k) => sum + metrics[k], 0)
+const weight = (c, key) => traitWeight(c.profile, key)
+const total = (list, key) => list.reduce((sum, c) => sum + weight(c, key), 0)
+const isSideLaner = (c) => c.role === 'top' || c.role === 'mid' || c.role === 'jungle'
+// Protect the carry se joue autour de l'ADC : un mid late game (Ryze, Cassiopeia) ne demande pas un enchanteur dédié.
+const isHypercarry = (c) => c.role === 'adc' && c.profile.scaling === 'l'
+const PHYSICAL = { P: 1, X: 0.5, M: 0 }
+
+// Moment fort moyen d'une compo : 1 = early, 2 = mid game, 3 = late game.
+export const averageScaling = (champs) =>
+  champs.length ? champs.reduce((sum, c) => sum + SCALING_VALUE[c.profile.scaling], 0) / champs.length : 2
+
+// Part des dégâts physiques d'une compo (un champion mixte compte pour moitié de chaque côté).
+export const physicalShareOf = (champs) =>
+  champs.length ? champs.reduce((sum, c) => sum + PHYSICAL[c.profile.damage], 0) / champs.length : 0.5
+
+// Total de chaque trait d'une compo ([{ role, profile }]) et métriques dérivées utilisées par les styles.
+export function compMetrics(champs) {
   return {
-    ...archetype,
-    value: core * (0.7 + 0.3 * support) * (archetype.rivals ? balance(metrics[main], rival) : 1),
-    gaps: [...gapsOf(metrics, archetype.core, true), ...gapsOf(metrics, archetype.support, false)],
+    ...Object.fromEntries(TRAITS.map((t) => [t.key, total(champs, t.key)])),
+    splitters: total(champs.filter(isSideLaner), 'S'),
+    lateCarries: total(champs.filter(isHypercarry), 'D'),
+    // Enchanteurs : la protection est leur point fort et ils ne sont pas eux-mêmes une frontline (Lulu, Janna…).
+    enchanters: champs.filter((c) => weight(c, 'P') >= 1 && weight(c, 'F') < 1).length,
   }
+}
+
+// Les styles, du plus adapté au moins adapté à des métriques de compo.
+// Assez rapide pour tester des milliers de compos (suggestions de compos).
+export function rankStyles(metrics) {
+  return ARCHETYPES.map((archetype) => {
+    const core = fit(metrics, archetype.core)
+    const support = fit(metrics, archetype.support)
+    const [main] = Object.keys(archetype.core)
+    const rival = (archetype.rivals ?? []).reduce((sum, k) => sum + metrics[k], 0)
+    return { ...archetype, value: core * (0.7 + 0.3 * support) * (archetype.rivals ? balance(metrics[main], rival) : 1) }
+  }).sort((a, b) => b.value - a.value || SPECIFICITY.indexOf(a.key) - SPECIFICITY.indexOf(b.key))
 }
 
 export function analyzeComp(picks, byId) {
@@ -278,19 +313,13 @@ export function analyzeComp(picks, byId) {
     return champ ? [{ ...champ, role: r.key, profile: getProfile(champ, r.key) }] : []
   })
 
-  const weight = (c, key) => traitWeight(c.profile, key)
-  const total = (list, key) => list.reduce((sum, c) => sum + weight(c, key), 0)
-  const traits = Object.fromEntries(TRAITS.map((t) => [t.key, total(champs, t.key)]))
+  const metrics = compMetrics(champs)
+  const traits = Object.fromEntries(TRAITS.map((t) => [t.key, metrics[t.key]]))
   // Champions qui apportent un trait, ceux dont c'est un point fort en premier.
   const withTrait = (key) => champs.filter((c) => weight(c, key) > 0).sort((a, b) => weight(b, key) - weight(a, key))
+  const physicalShare = physicalShareOf(champs)
 
-  // Répartition des dégâts (un champion mixte compte pour moitié de chaque côté).
-  const physical = champs.reduce((sum, c) => sum + (c.profile.damage === 'P' ? 1 : c.profile.damage === 'X' ? 0.5 : 0), 0)
-  const physicalShare = champs.length ? physical / champs.length : 0.5
-
-  const scaling = champs.length
-    ? champs.reduce((sum, c) => sum + SCALING_VALUE[c.profile.scaling], 0) / champs.length
-    : 2
+  const scaling = averageScaling(champs)
   const tempo = scaling < 1.8 ? 'early' : scaling > 2.3 ? 'late' : 'mid'
 
   const carries = withTrait('D').filter((c) => c.role !== 'support')
@@ -301,23 +330,16 @@ export function analyzeComp(picks, byId) {
     frontliners: withTrait('F'),
     pokers: withTrait('K'),
     pickers: withTrait('A'),
-    splitters: withTrait('S').filter((c) => c.role === 'top' || c.role === 'mid' || c.role === 'jungle'),
+    splitters: withTrait('S').filter(isSideLaner),
     peelers: withTrait('P'),
     carries,
-    // Protect the carry se joue autour de l'ADC : un mid late game (Ryze, Cassiopeia) ne demande pas un enchanteur dédié.
-    hypercarries: carries.filter((c) => c.role === 'adc' && c.profile.scaling === 'l'),
+    hypercarries: carries.filter(isHypercarry),
   }
 
-  const metrics = {
-    ...traits,
-    splitters: total(groups.splitters, 'S'),
-    lateCarries: total(groups.hypercarries, 'D'),
-    // Enchanteurs : la protection est leur point fort et ils ne sont pas eux-mêmes une frontline (Lulu, Janna…).
-    enchanters: champs.filter((c) => weight(c, 'P') >= 1 && weight(c, 'F') < 1).length,
-  }
-  const ranked = ARCHETYPES.map((a) => scoreArchetype(a, metrics)).sort(
-    (a, b) => b.value - a.value || SPECIFICITY.indexOf(a.key) - SPECIFICITY.indexOf(b.key),
-  )
+  const ranked = rankStyles(metrics).map((a) => ({
+    ...a,
+    gaps: [...gapsOf(metrics, a.core, true), ...gapsOf(metrics, a.support, false)],
+  }))
   const [main] = ranked
   // Le front-to-back est le style par défaut : en tendance, il n'apprendrait rien.
   const secondary = ranked.slice(1).find((a) => a.key !== 'frontToBack')
