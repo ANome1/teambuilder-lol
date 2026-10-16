@@ -7,7 +7,7 @@ const pct = (v) => `${v < 0.1 ? String(Math.round(v * 1000) / 10).replace('.', '
 // Midi pour que le fuseau horaire ne fasse pas reculer la date d'un jour.
 const date = (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
 
-// D'où vient la méta affichée : "SoloQ OP.GG · patch 26.20 — Pro : 142 games (patchs 26.17 et 26.20)".
+// D'où vient la méta affichée : "SoloQ OP.GG, patch 26.20 · Pro : 56 games (patchs 26.20, 26.17) — mise à jour le 16 octobre".
 export function MetaSources({ className = '' }) {
   const parts = []
   if (SOLOQ) parts.push(`SoloQ ${SOLOQ.source}, patch ${SOLOQ.patch}`)
@@ -27,56 +27,47 @@ function status(score) {
   return { label: 'Jouable', className: 'text-muted' }
 }
 
+// "SoloQ Tier 1, 52 % de victoires — pické dans 25 % des games pro"
+function statsLine(solo, pro) {
+  const parts = []
+  if (SOLOQ) parts.push(solo ? `SoloQ ${tierLabel(solo.tier)}, ${pct(solo.winRate)} de victoires` : 'Peu joué en soloQ à ce poste')
+  if (PRO) {
+    if (pro?.pickRate > 0) parts.push(`pické dans ${pct(pro.pickRate)} des games pro`)
+    else if (pro?.presence > 0) parts.push(`pick ou ban dans ${pct(pro.presence)} des games pro`)
+    else parts.push('absent en pro')
+  }
+  return parts.join(' — ')
+}
+
 // Où en est chaque pick dans la méta du moment (soloQ et pro), et par quoi le remplacer s'il y a nettement mieux
 // pour la même fonction. `pools` et `onPick` (optionnels) mettent en avant le pool du joueur et rendent les alternatives cliquables.
 export default function MetaCheck({ analysis, pools = {}, onPick }) {
   const { byId } = useChamps()
-  if (!SOLOQ && !PRO) return null
+  if (!SOLOQ && !PRO) return <p className="text-sm text-muted">Pas encore de données de méta : lancez `npm run meta`.</p>
   const taken = analysis.champs.map((c) => c.id)
 
   return (
-    <div className="grid gap-3 rounded border border-line p-4 text-sm">
-      <div className="grid gap-0.5">
-        <h4 className="font-semibold text-gold-light">Méta du moment</h4>
-        <MetaSources />
-      </div>
-
+    <div className="grid gap-3">
+      <MetaSources />
       <ul className="grid gap-2">
         {analysis.champs.map((c) => {
-          const solo = soloqStats(c.id, c.role)
-          const pro = proStats(c.id, c.role)
           const state = status(metaScore(c.id, c.role))
           const alternatives = metaAlternatives(c, c.role, { pool: pools[c.role], taken, byId })
           return (
-            <li key={c.role} className="grid gap-1.5 rounded bg-surface-2 p-2.5">
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                <span className="role-label w-16 shrink-0 text-gold">{roleLabel(c.role)}</span>
-                <ChampionIcon id={c.id} size={28} />
-                <span className={`text-xs ${state.className}`}>{state.label}</span>
-              </div>
-              <div className="grid gap-0.5 text-xs text-muted sm:pl-[4.75rem]">
-                {SOLOQ && (
-                  <span>
-                    SoloQ :{' '}
-                    {solo
-                      ? `${tierLabel(solo.tier)} · ${pct(solo.winRate)} de victoires · pické dans ${pct(solo.pickRate)} des games`
-                      : 'presque pas joué à ce poste'}
+            <li key={c.role} className="grid gap-2 rounded bg-surface-2 p-3">
+              <div className="flex items-center gap-3">
+                <ChampionIcon id={c.id} size={36} />
+                <div className="grid min-w-0 flex-1">
+                  <span className="text-sm">
+                    {c.name} <span className="text-muted">· {roleLabel(c.role)}</span>
                   </span>
-                )}
-                {PRO && (
-                  <span>
-                    Pro :{' '}
-                    {!pro
-                      ? 'ni pické ni banni'
-                      : pro.pickRate > 0
-                        ? `pické à ce poste dans ${pct(pro.pickRate)} des games, présent (pick ou ban) dans ${pct(pro.presence)}`
-                        : `pas pické à ce poste, présent (pick ou ban) dans ${pct(pro.presence)} des games`}
-                  </span>
-                )}
+                  <span className="text-xs text-muted">{statsLine(soloqStats(c.id, c.role), proStats(c.id, c.role))}</span>
+                </div>
+                <span className={`shrink-0 text-xs ${state.className}`}>{state.label}</span>
               </div>
               {alternatives.length > 0 && (
-                <div className="flex flex-wrap items-center gap-1.5 sm:pl-[4.75rem]">
-                  <span className="text-xs text-muted">Plus fort en ce moment, même fonction :</span>
+                <div className="flex flex-wrap items-center gap-1.5 sm:pl-12">
+                  <span className="text-xs text-muted">Plus fort pour la même fonction :</span>
                   {alternatives.map((s) => (
                     <span key={s.id} className="flex items-center gap-1 text-xs">
                       <ChampionIcon

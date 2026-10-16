@@ -33,9 +33,7 @@ export default function ProDrafts({ refs, analysis, pools, onPick }) {
   const examples = proExamples(ref, classified)
 
   return (
-    <div className="grid gap-3 rounded border border-line p-4 text-sm">
-      <h4 className="font-semibold text-gold-light">Références de la scène pro</h4>
-
+    <div className="grid gap-4 text-sm">
       <div className="flex flex-wrap gap-2">
         {[...shown, ...(shown.includes(ref) ? [] : [ref])].map((r) => (
           <button
@@ -60,7 +58,7 @@ export default function ProDrafts({ refs, analysis, pools, onPick }) {
 
       <ul className="grid gap-2">
         {rows.map((row) => (
-          <li key={row.role} className="grid gap-1.5 rounded bg-surface-2 p-2.5">
+          <li key={row.role} className="grid gap-2 rounded bg-surface-2 p-3">
             <div className="flex flex-wrap items-center gap-2">
               <span className="role-label w-16 shrink-0 text-gold">{roleLabel(row.role)}</span>
               {row.current ? <ChampionIcon id={row.current.id} size={28} /> : <span className="text-muted">—</span>}
