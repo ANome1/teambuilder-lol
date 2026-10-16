@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { analyzeComp, FAMILIES, TRAITS } from '../lib/draft'
+import { FAMILIES, TRAITS, analyzeComp } from '../lib/draft'
 import { isOffMeta } from '../lib/meta'
 import { matchProDrafts } from '../lib/proDrafts'
 import { roleLabel } from '../lib/roles'
@@ -11,29 +11,42 @@ const pct = (v) => `${Math.round(v * 100)} %`
 // Les traits partiels comptent pour moitié : 2,5 plutôt que 2.5.
 const num = (v) => String(v).replace('.', ',')
 
-// `pools` et `onPick` (optionnels) activent les suggestions cliquables (méta et références pro).
-// `compact` : version courte pour les cartes de la liste des compos.
-export default function DraftAnalysis({ picks, compact = false, pools, onPick }) {
+// Analyse d'une compo et références pro classées de la plus proche à la moins proche.
+export function useDraftAnalysis(picks) {
   const { byId } = useChamps()
   const a = useMemo(() => analyzeComp(picks, byId), [picks, byId])
   const refs = useMemo(() => matchProDrafts(a), [a])
+  return { a, refs }
+}
+
+const offMetaOf = (a) => a.champs.filter((c) => isOffMeta(c.id, c.role))
+
+// Les 2 alertes principales d'une compo (pick en retrait dans la méta d'abord), pour les vues courtes.
+export function mainAlerts(a) {
+  const offMeta = offMetaOf(a)
+  return [
+    ...(offMeta.length ? [`En retrait dans la méta : ${offMeta.map((c) => `${c.name} (${roleLabel(c.role)})`).join(', ')}.`] : []),
+    ...a.warnings,
+  ].slice(0, 2)
+}
+
+// `pools` et `onPick` (optionnels) activent les suggestions cliquables (méta et références pro).
+export default function DraftAnalysis({ picks, pools, onPick }) {
+  const { a, refs } = useDraftAnalysis(picks)
   const [tab, setTab] = useState('summary')
 
   if (a.champs.length === 0) return <p className="text-[13px] text-muted">Choisis des champions pour voir l'analyse.</p>
 
-  const offMeta = a.champs.filter((c) => isOffMeta(c.id, c.role))
-  if (compact) return <CompactAnalysis a={a} reference={refs[0]} offMeta={offMeta} />
-
   const tabs = [
     { key: 'summary', label: 'Résumé' },
     { key: 'plan', label: 'Plan de jeu' },
-    { key: 'meta', label: 'Méta', alert: offMeta.length > 0 },
+    { key: 'meta', label: 'Méta', alert: offMetaOf(a).length > 0 },
     { key: 'pro', label: 'Références pro' },
   ]
 
   return (
     <div className="grid gap-4">
-      <StyleHeader a={a} />
+      <StyleBadges a={a} reference={refs[0]} />
       {a.plan && <p className="text-[15px] leading-relaxed">{a.plan.win}</p>}
 
       <nav aria-label="Analyse" className="flex flex-wrap gap-1 border-b border-line-soft pb-3">
@@ -61,33 +74,18 @@ export default function DraftAnalysis({ picks, compact = false, pools, onPick })
   )
 }
 
-function StyleHeader({ a }) {
+// Style principal, tendance et moment fort ; la référence pro la plus proche s'affiche au survol du style.
+export function StyleBadges({ a, reference }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="rounded-full border border-[#3a4766] bg-accent-soft px-3 py-1 text-[13px] font-semibold text-white">
+      <span
+        className="rounded-full border border-[#3a4766] bg-accent-soft px-3 py-1 text-[13px] font-semibold text-white"
+        title={reference ? `Proche de la référence pro ${reference.name} (${pct(reference.similarity)})` : undefined}
+      >
         {a.archetype ? `${a.archetype.label} · ${pct(a.archetype.value)}` : 'Style pas encore défini'}
       </span>
       {a.secondary && <span className="text-[13px] text-soft">tendance {a.secondary.label}</span>}
-      <span className="ml-auto rounded-full border border-line px-3 py-1 text-xs text-soft">Pic : {a.tempo.label}</span>
-    </div>
-  )
-}
-
-// Carte de la liste des compos : le style, la référence pro la plus proche et les 2 alertes principales.
-function CompactAnalysis({ a, reference, offMeta }) {
-  const alerts = [
-    ...(offMeta.length ? [`En retrait dans la méta : ${offMeta.map((c) => `${c.name} (${roleLabel(c.role)})`).join(', ')}.`] : []),
-    ...a.warnings,
-  ].slice(0, 2)
-  return (
-    <div className="grid gap-2.5">
-      <StyleHeader a={a} />
-      {reference && (
-        <p className="text-xs text-muted">
-          Proche de la référence pro <span className="font-semibold text-text">{reference.name}</span> ({pct(reference.similarity)})
-        </p>
-      )}
-      <Points items={alerts} kind="warn" />
+      <span className="rounded-full border border-line px-3 py-1 text-xs text-soft">Pic : {a.tempo.label}</span>
     </div>
   )
 }
@@ -142,7 +140,7 @@ function Plan({ a }) {
   )
 }
 
-function Points({ items, kind }) {
+export function Points({ items, kind }) {
   if (!items.length) return null
   const [icon, className] = kind === 'ok' ? ['✓', 'text-ok'] : ['⚠', 'text-warn']
   return (

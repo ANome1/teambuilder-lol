@@ -54,20 +54,20 @@ export default function MetaCheck({ analysis, pools = {}, onPick }) {
           const state = status(metaScore(c.id, c.role))
           const alternatives = metaAlternatives(c, c.role, { pool: pools[c.role], taken, byId })
           return (
-            <li key={c.role} className={`grid gap-2.5 px-4 py-3 ${i > 0 ? 'border-t border-line-soft' : ''}`}>
+            <li key={c.role} className={`grid gap-2 px-4 py-2.5 ${i > 0 ? 'border-t border-line-soft' : ''}`}>
               <div className="flex items-center gap-3">
                 <ChampionIcon id={c.id} size={36} />
                 <div className="grid min-w-0 flex-1 gap-0.5">
                   <span className="font-semibold">
                     {c.name} <span className="font-normal text-muted">· {roleLabel(c.role)}</span>
                   </span>
-                  <span className="text-xs text-soft">{statsLine(soloqStats(c.id, c.role), proStats(c.id, c.role))}</span>
+                  <span className="text-[13px] text-soft">{statsLine(soloqStats(c.id, c.role), proStats(c.id, c.role))}</span>
                 </div>
                 <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${state.className}`}>{state.label}</span>
               </div>
               {alternatives.length > 0 && (
                 <div className="flex flex-wrap items-center gap-2 sm:pl-12">
-                  <span className="text-xs text-muted">Plus fort pour la même fonction :</span>
+                  <span className="text-[13px] text-soft">Plus fort pour la même fonction :</span>
                   {alternatives.map((s) => (
                     <span key={s.id} className="flex items-center gap-1 text-xs">
                       <ChampionIcon

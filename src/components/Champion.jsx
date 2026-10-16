@@ -31,7 +31,18 @@ export function ChampionIcon({ id, size = 40, onClick, title }) {
 }
 
 // Recherche de champion. `suggestions` s'affichent quand le champ de recherche est vide.
-export function ChampionSearch({ onPick, exclude = [], suggestions = [], placeholder = 'Ajouter un champion…' }) {
+// `className`, `inputClassName` et `resultsClassName` placent le champ et les résultats
+// (ex : `className="contents"` pour les ranger dans la grille du parent).
+export function ChampionSearch({
+  onPick,
+  exclude = [],
+  suggestions = [],
+  placeholder = 'Ajouter un champion…',
+  iconSize = 36,
+  className = 'grid gap-2',
+  inputClassName = '',
+  resultsClassName = '',
+}) {
   const { list } = useChamps()
   const [query, setQuery] = useState('')
 
@@ -50,9 +61,9 @@ export function ChampionSearch({ onPick, exclude = [], suggestions = [], placeho
   }
 
   return (
-    <div className="grid gap-2">
+    <div className={className}>
       <input
-        className="field"
+        className={`field ${inputClassName}`}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={(e) => {
@@ -64,9 +75,9 @@ export function ChampionSearch({ onPick, exclude = [], suggestions = [], placeho
         placeholder={placeholder}
       />
       {results.length > 0 && (
-        <div className="flex flex-wrap gap-1">
+        <div className={`flex flex-wrap gap-1 ${resultsClassName}`}>
           {results.map((id) => (
-            <ChampionIcon key={id} id={id} size={36} onClick={() => pick(id)} />
+            <ChampionIcon key={id} id={id} size={iconSize} onClick={() => pick(id)} />
           ))}
         </div>
       )}
